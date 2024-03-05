@@ -1,0 +1,126 @@
+--- schedule_block($forecast,$period,$end,$timezone) ---
+this function aims to calculate the best start and end times for a given last possible end time + period, using a forecast profile to find the best time
+
+
+fetches $profile from $forecast->profile
+this should be an array of numbers, effectively the forecast curve
+
+$profile_length = count($profile)
+
+checks that given $end doesn't come before $forecast->start
+checks that given $end doesn't come after $forecast->end, if it does --- $end = $forecast->end
+
+checks that given $period isn't <=0, 
+if period is > profile_length*forecast->interval (total duration of profile) --- $period = (total duration of profile)
+if period is > given $end - $forecast->start --- $period = $end-$forecast->start
+
+sets $period_div = $period/$forecast->interval
+sets $threshold = 0, $pos = -1
+
+
+runs the following loops:
+
+for $td=0->profile length (number of intervals contained in profile),
+    for $i=0->period length (number of intervals contained in period)
+        if current position ($i+$td) isn't contained in $profile, sets $valid_block = 0
+        otherwise, sets $time to $forecast->start + (current position)*interval
+        if $time exceeds set $end time, sets valid_block = 0
+        $sum += $profile[current position]
+
+    if $td=0, $threshold = $sum
+
+    if $valid_block
+        if ($forecast->optimise==MIN AND $sum<=$threshold) OR ($forecast->optimise==MAX AND $sum>=$threshold)
+            $threshold = $sum
+            $pos = $td
+
+a simple explanation of this is:
+
+$td is treated as the hypothetic start point for the power on period
+for every potential start point, the following is done:
+    values for every interval within the given power on period are summed in $sum
+    if $td=0, $threshold is primed with $threshold = $sum
+    if $forecast->optimise==MIN, check if $sum <=$threshold. if $forecast->optimise==MAX, check if $sum >=$threshold
+    if either of these cases are true, $threshold = $sum and $post = $td
+in effect, we simulate the power on period for every possible start point. after the loop has finished, the "best" (lowest or highest) possible start point is found in $pos
+
+now that the best start point is known:
+
+the best start point is done using the forecast intervals, and now needs to be output 
+compares $profile[start_point] (left_val) and $profile[end_point] (right_val)
+if left val is less than right val, it's assumed that moving the run period to the left might be best
+and the opposite if right val is less than left val
+based on this, $start and $end are set
+
+this process doesn't account for the $forecast->optimise setting, and i'm not sure why
+
+an array is returned, which contains the start and end times which should be used:
+return array(array("start"=>array($start,get_hour($date,$start)), "end"=>array($end,get_hour($date,$end))));
+
+
+--- schedule_interruptible ---
+this has the same end goal in mind as schedule_block, but applies to devices that can be turned on/off repeatedly
+attempts to fill into times of lowest price/most available power first
+
+same basic setup as previous function, but this time:
+
+$allocated = array()
+for $td=0 -> profile length,
+    $allocated[$td] = 0
+
+for each period of requested use,
+    if $forecast->optimise==MIN, set $threshold to $forecast->max, or if ==MAX, set to ->min
+    at this point, $threshold is the worst possible value
+    for each interval in profile,
+        fetch value and time
+        check that time is within requested usage period
+        check that current interval hasn't been allocated already
+        for optimise==MIN, if value <= threshold - or for optimise==MAX, if value >= threshold
+            $threshold = $val
+            $pos = $td
+            this loop will continue to improve $threshold until the best value is found
+    
+    $allocated[$pos] = 1
+    this allocates the current interval in the profile
+
+a simple explanation of this is:
+
+requested turn on duration (period) is split up into intervals, to match profile data
+for each interval of requested use, we iterate over every interval in the profile. the min/max available value is found and then allocated within the allocated array
+this is repeated until every interval for turn on duration has been allocated an interval from the profile
+
+to account for schedule periods that aren't exact multiples of forecast intervals..
+
+$last_allocated = $pos
+$partial = $period % $forecast->interval
+
+then, an array of segments is built:
+$segments = array()
+for every interval in profile:
+    fetch $time for interval
+    if this interval has been allocated:
+        $start and $end are set to match this interval
+        if $partial>0 and if $last_allocated==current_interval
+            $start = $end - $partial
+            this is to set this segment nearest to the end of the interval (not sure why)
+        $segments[] = array($start,$end)
+
+$segments[] = array(0,0)
+dud segment allocated to make it easier to find the end of the last period
+
+we now make $periods, which condenses allocated intervals that are next to each other
+
+lastly, return $periods
+$periods has the following format: 
+$periods[] = array("start"=>array($start,get_hour($date,$start)), "end"=>array($end,get_hour($date,$end)))
+
+
+--- schedule_timer($forecast_start,$forecast_end,$timers,$timezone) ---
+
+simple explanation:
+
+takes array $timers, returns as $periods in same format as above
+
+--- forecast_calc_min_max($forecast) ---
+
+finds min and max values in a supplied forecast, sets $forecast->min and ->max, then results edited $forecast

@@ -1,0 +1,60 @@
+since it uses mqtt, we will only aim for a brief overview for now:
+
+emonesp.php ---
+
+    __construct($mqtt_client, $basetopic):
+        constructor method for the class. it initializes the mqtt_client and basetopic properties of the class with the values passed as arguments.
+
+    default_settings():
+        creates and returns a new stdclass object, intended to hold default settings.
+
+    set_basetopic($basetopic):
+        sets the $basetopic property of the class to the value passed as an argument.
+
+    get_time_offset($timezone):
+        takes a timezone as an argument, creates a datetimezone object with that timezone, gets the current date and time, and returns the timezone offset from utc in hours.
+
+    on($device):set_basetopic
+        turns on a specified device by publishing a message to a mqtt topic associated with the device. it also logs the action.
+
+    off($device):
+        turns off a specified device by publishing a message to a mqtt topic associated with the device. it also logs the action.
+
+    timer($device, $s1, $e1, $s2, $e2):
+        sets a timer for a specified device by publishing a message containing timer information to a mqtt topic associated with the device. it also logs the action.
+
+    send_state_request($device):
+        publishes a message to request the state of a specified device from the mqtt broker.
+
+    handle_state_response($schedule, $message, $timezone):
+        handles responses received from the mqtt broker regarding the state of a device. it updates the schedule settings based on the received state information and returns the updated schedule.
+
+    get_state($mqtt_request, $device, $timezone):
+        retrieves the state of a specified device from the mqtt broker and returns it as an object.
+
+    auto_update_timeleft($schedule):
+        performs any necessary updates to the time left for a schedule and returns the updated schedule.
+
+hpmon.php ---
+
+    default_settings()
+        replaces emonesp version of this function, adding $flowT with a default value of 30.0
+
+    set_flowT()
+        sets the flow temperature for given device. checks if old flowT is the same, if not.. calculates a Vout value, rounds it, publishes calculated voltage.
+        $vout = round(($flowT-7.14)/0.0371);
+    
+openevse.php ---
+
+mostly the same as emonesp.php, but adds:
+
+    set_divert_mode($device, $mode)
+       sets the divert mode for the specified device and publishes MQTT messages to the appropriate topic. divert mode here likely refers to diverting excess energy, commonly associated with solar systems.
+
+tasmota.php ---
+
+same basic functions as emonesp.php
+
+smartplug.php, wifirelay.php
+
+both extends of emonesp.php with no added functions

@@ -1,0 +1,193 @@
+----- FORECASTS -----
+
+-- carbonintensity.php -- function get_forecast_carbonintensity($redis,$params)
+UNITS - g(CO2)/kWh 
+
+1. retrieves NATIONAL carbon intensity forecast 
+first attempts to fetch a cached verson from redis key "demandshaper:carbonintensity"
+if this fails, it fetches from "https://emoncms.org/demandshaper/carbonintensity&time=".time() which seems to be a clone of https://api.carbonintensity.org.uk/intensity/2024-02-19T12:00:00Z/fw24h
+it then places the fetched data into the redis key it first attempted to fetch from, with an autodelete of 30 minutes
+i assume this is cronjob'd every 30 minutes
+
+this API data gives the forecast in 30min windows for 24hr after the given date/time
+unsure why NATIONAL data is being fetched rather than regional data, as carbonintensity.org.uk supplies this data using the same api
+
+result is returned with this format:
+
+data: [
+    0: [
+        from: "2024-02-19T11:30Z",
+        to: "2024-02-19T12:00Z",
+        intensity: [
+            forecast: x
+            actual: null or y if time passed
+            index: "low"/high/moderate
+        ]
+    ],
+    ..: [
+
+    ],
+    48: [
+
+    ]
+]
+
+2. converts to associative array/dict ($timevalues) with format of - timestamp:value
+where timestamp is the 'from' value, and value is the forecast value
+
+3. taking start, end and interval from $params->start/end/interval
+creates an array $profile, then fills it with $timevalues[$time] where $time is a range between start and end with interval as the step
+if value isn't found, it attempts to replace it with a +-24hr value
+
+4. finally,
+$result = new stdClass();
+$result->start = $params->start;
+$result->end = $params->end; 
+$result->interval = $params->interval;
+$result->profile = $profile;
+$result->optimise = MIN;
+return $result;
+
+
+
+-- octopusagile.php --
+UNITS - GBP/pence
+works similarly to the above file, however this time the 'get_list_entry_octopusagile' function is actually used..
+
+0. checks if $params->gsp_id is set (unsure what $params contains). if it isn't, returns false.
+checks if $params->gsp_id matches a gsp_id within the octopusagile list_entry. if not, returns false.
+
+1. tries to fetch data from redis with key, 'demandshaper:octopusagile:{params->gsp_id}' <- it's unclear what this value is
+else, fetches data from https://emoncms.org/demandshaper/octopus (https://api.octopus.energy/v1/products/AGILE-18-02-21/electricity-tariffs/E-1R-AGILE-18-02-21-D/standard-unit-rates/?page=1)
+this data comes with the following format:
+
+[
+    count: (total number of results (100 results per page)),
+    next: null or url to next page if there is one
+    previous: null or url to previous page if there is one
+    results: [
+        0: [
+            value_exc_vat: -,
+            value_inc_vat: -,
+            valid_from: "2017-01-03T18:30:00Z",
+            valid_to: "2017-01-03T19:00:00Z",
+            payment_method: null
+        ],
+        ..: [
+
+        ],
+    ]
+]
+
+2. converts to associative array/dict ($octopus) with format of - timestamp:value
+where timestamp is the 'valid_from' value, and value is value_inc_vat
+
+3. taking start, end and interval from $params->start/end/interval
+creates an array $profile, then fills it with $timevalues[$time] where $time is a range between start and end with interval as the step
+if value isn't found, it attempts to replace it with a -24hr value
+else, sets it to 12.00
+
+4. finally,
+the same as previous function
+
+
+-- energylocal.php --
+same as octopusagile.php, but this time checks that $params->club is set and then checks it against a list of clubs in the list_entry.
+if this fails, returns false, same as octopusagile.
+
+uses redis key 'demandshaper:energylocal_:{clubname}'
+otherwise fetches from 'https://dashboard.energylocal.org.uk/club/forecast?name=', which is data from redis key 'energylocal:forecast:{clubname}'
+output format:
+
+[
+    timezone: "Europe/London",
+    start: in seconds,
+    end: in seconds,
+    interval: 1800,
+    profile: [
+        0: value,
+        1: value,
+        ..: value,
+
+    ],
+    optimise: 0
+]
+
+makes associative array ($energylocal) and $profile array in one go. same as carbonintensity, but profile values default to value of 2.0 if there is no matching value or matching +-24hr value
+
+finally,
+
+the same as all previous functions
+
+
+
+-- demandprofile.php --
+
+redis key 'demandshaper:schedules:{userid}'
+see demandprofile-example-output.json - placed into $demandshaper_devices
+
+builds $device_schedules array like so:
+    $device_schedules = array();    
+    foreach ($demandshaper_devices as $name=>$device) {
+        if ($name!=$params->device_name) {
+            $device_schedules[] = $device->runtime->periods;
+        }
+    }
+
+resulting in an array of running periods for each of the users device, except for currently selected device?
+i'm unsure why entries are only added if $name!=$params->device_name
+this may be done to exclude the current device from modelling?
+
+next creates $profile by:
+initialising $status = 0
+looping through $time range, same as previous functions..
+for each device schedule, if the current $time is within the device's operating schedule, $status += 10
+
+finally, appends $status to profile for each loop through the time range
+and then ouputs:
+
+the same as all previous functions
+
+-- economy7.php --
+
+for a given time period/interval, checks if each interval falls within the economy7 00:00 - 07:00 low rate period
+if it does, appends 0.07 to $profile.
+otherwise, appends 0.15 to $profile
+
+outputs the same as all previous functions
+
+-- nordpool.php --
+
+seems to be effectively the same as octopusagile.php, but for nordpool as the supplier
+fetches from 'demandshaper:nordpool:{area}' or http://datafeed.expektra.se/datafeed.svc/spotprice
+
+unable to get an example of data output from this source, requires access token etc.
+unlike octopusagile.php, it accounts for vat 
+
+-- solcast.php --
+
+fetches from 'demandshaper:solcast:{area}' or https://api.solcast.com.au/rooftop_sites/".$params->siteid."/forecasts",$req_params
+unable to preview data, due to missing api key etc.
+
+associative array made with format of timestamp:pv_estimate (photovoltaic)
+
+only difference between this and previous outputs is that optimise is set to MAX instead of MIN
+
+--solarclimacell.php --
+
+fetches from 'demandshaper:solarclimacell:{lat}:{lon} (lat/lon from $params)
+or https://api.climacell.co/v3/weather/forecast/hourly
+this is deprecated, not going to investigate further
+
+
+-- very rough range for $profile outputs --
+carbonintensity - 30(very low) -> 300 (high)
+demandprofile - 0 -> 10*(maximum number of devices from one user - 1)
+economy7 - 0.07 or 0.15
+energylocal - (small sample size, take with a pinch of salt)
+    bethesda - generally 500-2500
+    corwen - 50-300
+    crickhowell - 50-300
+    bethesda_solar - (-0.2)-0
+    repower - 0
+octopusagile - 10 - 40

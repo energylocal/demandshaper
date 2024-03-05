@@ -1,0 +1,101 @@
+sets up DemandShaper class,
+initialises mysql, redis, etc., scans for devices via device_class_scan() function
+
+
+--- device_class_scan ---
+fetches all filenames found in /demandshaper/devices/
+returns as array
+
+--- load_device_classes ($mqtt_client,$mqtt_basetopic)
+requires .php files from /demandshaper/devices/ based on device_class_list
+
+--- get_list($userid) ---
+takes userid, gets list of devices using $get_devices
+does a redis get("demandshaper:schedules:$userid").
+if it returns results, places results in $schedules
+for each device from get_devices,
+sets 'device_name'
+
+--- get_devices($userid) ---
+takes userid, uses "get_list($userid)" function to get all devices for that user
+checks these devices against the device_class_list, and appends matching devices to array
+returns this array, format as follows:
+$name = $d["nodeid"] for each device from get_list
+$devices[$name] = array("id"=>$d["id"]*1, "type"=>$d["type"])
+
+*** these two functions are strange ^ ***
+
+--- set($userid,$schedules) ---
+supplied with userid and array of schedules,
+fetches old schedules from redis "demandshaper:schedules:$userid"
+if new schedules does not match old,
+    validates that entry userid exists in 'demandshaper' table of emondb
+        updates schedules table in database
+    if user entry doesn't exist, creates one
+
+--- get($userid) ---
+inits $devices = new stdClass()
+first tries to fetch schedules (demandshaper_devices) from redis "demandshaper:schedules:$userid"
+if this fails, fetches from demandshaper table of emondb
+loads devicelist using get_devices
+for every device in devicelist,
+    if schedule contains a matching devicekey.. 
+        sets $devices->$device_key = this->$this->validate_device($demandshaper_devices->$device_key,$device_key,$device["type"]);
+
+for every device in devicelist,
+    if schedule doesn't contain a matching devicekey..
+        creates a new device: $new_device = $this->validate_device(false,$device_key,$device["type"]);
+        sets $new_device->settings->device_name = $device_key;
+        copies forecast settings (to $new_device->settings->forecast_config) from last device, if there is one
+        sets $devices->$device_key = $new_device;
+
+finally, returns $devices
+
+--- validate_device($input,$device_key,$device_type) ---
+
+fetches default device settings for a device. if any settings have been provided via $input, applies them to these default settings
+then outputs resultant settings
+
+--- load_default_device() ---
+fetches default settings from /demandshaper/demandshaper-module/default.json
+returns them after a json_decode
+
+--- get_forecast_list() ---
+scans /demandshaper/forecasts for php files,
+requires found php files
+removes .php from the filenames, sets as $name
+then runs $forecast_list[$name] = get_list_entry_$name() for each one
+returns $forecast_list
+
+--- get_combined_forecast($config,$timezone,$userid) ---
+
+an example of $config can be found in demandprofile-example-output.json, where "forecast_config" is supplied as $config
+
+inits $params = new stdClass()
+places timezone, userid, interval, start, end into params
+checks every config item, fetches $name=$config_item->name for each item
+    requires /demandshaper/forecasts/$name.php for each item
+    runs get_list_entry_$name function for each item
+    for every $param_key in the list, if supplied $config has a value matching the param_key:
+        $params->$param_key = $config_item->$param_key
+    if $forecast = "get_forecast_$name($this->redis,$params)" returns a result:
+        $combined = clone $forecast
+        sets all $combined->profile values to 0
+        then for every config item (forecast), adds their profile values to $combined->profile, using this equation:
+        $combined->profile[$td] += ($forecast->profile[$td]*$config_item->weight);
+
+if $combined is still == false at this point,
+    creates a $combined = new stdClass()
+    and fills the ->profile with 1s
+
+returns $combined
+
+--- fetch_ovms_v2($vehicleid,$carpass) ---
+
+using supplied info, get request to "ttps://dexters-web.de/api/call?fn.name=ovms/export&fn.vehicleid=$vehicleid&fn.carpass=$carpass&fn.format=csv&fn.types=D,S&fn.last=1"
+seems to be csv format
+
+inits $data with 'soc' set to 20
+if csv has more than 6 lines:
+    extracts data from csv into $data
+returns $data

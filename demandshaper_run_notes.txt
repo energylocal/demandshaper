@@ -1,0 +1,99 @@
+defines "MAX" as 1, "MIN" as 0, default_userid = 1, EMONCMS_EXEC = 1
+executes a file lock, gets $pid=getmypid(), starts emonlogger
+starts mysql, redis, mqtt clients
+$connected = true/false to check if connected to mqtt
+
+enters a control loop..
+
+while(true) :
+    $trigger = $redis->llen("demandshaper:trigger")
+    if $trigger >0 {
+        log->info("trigger")
+    }
+
+    if $trigger OR $firstrun:
+        $firstrun = false;
+
+        inits $users array,
+        for every entry in trigger list:
+            $users[] = $redis->lpop("demandshaper:trigger")
+            lpop returns an entry, then deletes it
+        queries demandshaper table of emondb, select userid from demandshaper
+        for every row with a userid, adds userid to $users
+        for every $user in $users:
+            logs "processing:userid"
+            fetches their timezone,
+            inits $schedules = $demandshaper->get(userid)
+            for each $schedule:
+                fetches device + device type
+                checks if schedule should be running, updates schedule->runtime->started, schedule->runtime->timeleft
+
+                $schedule->settings->ctrlmode=="smart" or "timer"
+                    if there are more than 0 periods in schedule->runtime->periods
+                        runs timer function from device.php's
+                else if ->ctrlmode=="on", runs on function from device.php's
+                else if "off", runs off function
+
+                if $schedule->settings->flowT is set:
+                    runs set_flowT function from hpmon.php
+
+                if schedule->settings->divert_mode is set:
+                    runs set_divert_mode from openevse.php
+
+                ---
+
+                if the current time is beyond $schedule->settings->end_timestamp:
+                    this value is set forward by 24hr
+                    $schedule->runtime->timeleft = $schedule->settings->period * 3600
+                    unset($schedule->runtime->started)
+
+                    if ctrlmode=="smart"
+                        checks if sched->settings->on_completion is set to on, off or smart
+                        sets sched->settings->ctrlmode to this value
+                        in effect updating the ctrlmode for the device
+                
+                if ctrlmode=="smart"
+                    if schedule hasn't yet started via sched->runtime->started
+                        updates time left for schedule
+                        runs get_combined_forecast, then forecast_calc_min_max, then calculates schedules:
+                        if sched->settings->interruptible: uses schedule_interruptible
+                        otherwise uses schedule_block
+                
+                if ctrlmode="timer"
+                    compile combined forecast,
+                    run $schedule->runtime->periods =  schedule_timer($combined->start,$combined->end,$schedule->settings->timer,$timezone)
+
+                for every schedule, $demandshaper->set($userid,$schedules)
+            sleeps for 1 sec
+            updates $lasttime = $now
+
+
+    still inside while(true)
+
+    every 5 mins:
+    if $connected && (time()-$last_state_check>300) {
+        last_state_check = time()
+
+        grabs all userids from demandshaper table
+        for each userid:
+            $schedules = $demandshaper->get($userid)
+            for each schedule
+                if ->settings->device, 
+                    $device_class[$device_type]->send_state_request($schedule->settings->device);
+    }
+
+    lastly, if !$connected && 5 secs since $last_retry
+        tries to reconnect to mqtt
+
+end of while(true) loop - usleep(100000) (10 seconds)
+
+--- message ---
+
+splits message into parts, using / as delimiter
+
+gets userid, device from message
+if multiuser eneabled, appends /$userid to base topic
+
+if user found and $schedules->device set,
+
+                    

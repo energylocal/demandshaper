@@ -1,0 +1,264 @@
+{
+    "mynode": {
+        "settings": {
+            "device": "mynode",
+            "device_type": "smartplug",
+            "device_name": "mynode",
+            "ctrlmode": "smart",
+            "period": 3,
+            "end": 8,
+            "end_timestamp": 1707465600,
+            "interruptible": 0,
+            "runone": 0,
+            "on_completion": "smart",
+            "forecast_config": [
+                {
+                    "name": "energylocal",
+                    "weight": 4,
+                    "club": "bethesda"
+                },
+                {
+                    "name": "energylocal",
+                    "weight": 1,
+                    "club": "bethesda_solar"
+                }
+            ],
+            "forecast_units": "generic",
+            "timer": [
+                {
+                    "start": 0,
+                    "end": 0
+                },
+                {
+                    "start": 0,
+                    "end": 0
+                }
+            ],
+            "ip": ""
+        },
+        "runtime": {
+            "started": false,
+            "periods": [
+                {
+                    "start": [
+                        1707447600,
+                        3
+                    ],
+                    "end": [
+                        1707458400,
+                        6
+                    ]
+                }
+            ],
+            "timeleft": 10800
+        }
+    },
+    "smartplug5402": {
+        "settings": {
+            "device": "smartplug5402",
+            "device_type": "smartplug",
+            "device_name": "Dehumidifer",
+            "ctrlmode": "smart",
+            "period": 1.5,
+            "end": 6,
+            "end_timestamp": 1707458400,
+            "interruptible": 0,
+            "runone": 0,
+            "on_completion": "smart",
+            "forecast_config": [
+                {
+                    "name": "energylocal",
+                    "club": "bethesda",
+                    "weight": 1
+                },
+                {
+                    "name": "energylocal",
+                    "weight": 4,
+                    "club": "bethesda_solar"
+                },
+                {
+                    "name": "demandprofile",
+                    "weight": 1,
+                    "device_name": "washingmachine"
+                },
+                {
+                    "name": "demandprofile",
+                    "weight": 1,
+                    "device_name": "dishwasher"
+                }
+            ],
+            "forecast_units": "generic",
+            "timer": [
+                {
+                    "start": 10,
+                    "end": 11
+                },
+                {
+                    "start": null,
+                    "end": null
+                }
+            ],
+            "ip": "192.168.1.155"
+        },
+        "runtime": {
+            "started": false,
+            "periods": [
+                {
+                    "start": [
+                        1707447600,
+                        3
+                    ],
+                    "end": [
+                        1707458400,
+                        6
+                    ]
+                }
+            ],
+            "timeleft": 10800
+        }
+    },
+    "tasmota_552C52": {
+        "settings": {
+            "device": "tasmota_552C52",
+            "device_type": "tasmota",
+            "device_name": "Bike charger",
+            "ctrlmode": "smart",
+            "period": 3,
+            "end": 12,
+            "end_timestamp": 1704283200,
+            "interruptible": 1,
+            "runone": 0,
+            "on_completion": "smart",
+            "forecast_config": [
+                {
+                    "name": "energylocal",
+                    "club": "bethesda",
+                    "weight": 1
+                },
+                {
+                    "name": "energylocal",
+                    "weight": 4,
+                    "club": "bethesda_solar"
+                },
+                {
+                    "name": "demandprofile",
+                    "weight": 1,
+                    "device_name": "washingmachine"
+                }
+            ],
+            "forecast_units": "generic",
+            "timer": [
+                {
+                    "start": null,
+                    "end": null
+                },
+                {
+                    "start": null,
+                    "end": null
+                }
+            ],
+            "ip": "192.168.1.206"
+        },
+        "runtime": {
+            "started": false,
+            "periods": [],
+            "timeleft": 10800
+        }
+    },
+    "wifirelay43": {
+        "settings": {
+            "device": "wifirelay43",
+            "device_type": "wifirelay",
+            "device_name": "washingmachine",
+            "ctrlmode": "on",
+            "period": 4.5,
+            "end": 5,
+            "end_timestamp": 1704258000,
+            "interruptible": 0,
+            "runone": 0,
+            "on_completion": "on",
+            "forecast_config": [
+                {
+                    "name": "energylocal",
+                    "club": "bethesda",
+                    "weight": 1
+                },
+                {
+                    "name": "energylocal",
+                    "weight": 40,
+                    "club": "bethesda_solar"
+                }
+            ],
+            "forecast_units": "generic",
+            "timer": [
+                {
+                    "start": 13,
+                    "end": 15
+                },
+                {
+                    "start": null,
+                    "end": null
+                }
+            ],
+            "ip": "192.168.1.208"
+        },
+        "runtime": {
+            "started": false,
+            "periods": [],
+            "timeleft": 10800
+        }
+    },
+    "wifirelay4466": {
+        "settings": {
+            "device": "wifirelay4466",
+            "device_type": "wifirelay",
+            "device_name": "dishwasher",
+            "ctrlmode": "on",
+            "period": 3,
+            "end": 21.5,
+            "end_timestamp": 1704231000,
+            "interruptible": 0,
+            "runone": 0,
+            "on_completion": "on",
+            "forecast_config": [
+                {
+                    "name": "energylocal",
+                    "club": "bethesda",
+                    "weight": 1
+                },
+                {
+                    "name": "energylocal",
+                    "weight": 6,
+                    "club": "bethesda_solar"
+                },
+                {
+                    "name": "demandprofile",
+                    "weight": 1,
+                    "device_name": "washingmachine"
+                },
+                {
+                    "name": "demandprofile",
+                    "weight": 1,
+                    "device_name": ""
+                }
+            ],
+            "forecast_units": "generic",
+            "timer": [
+                {
+                    "start": 1.5,
+                    "end": 4
+                },
+                {
+                    "start": null,
+                    "end": null
+                }
+            ],
+            "ip": "192.168.1.156"
+        },
+        "runtime": {
+            "started": false,
+            "periods": [],
+            "timeleft": 10800
+        }
+    }
+}
