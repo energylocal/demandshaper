@@ -93,6 +93,44 @@ $schedules = array();
 $firstrun = true;
 $lasttime = time();
 
+function createClient($clientId, $username, $password, $host, $port) {
+    $client = new Mosquitto\Client($clientId);
+
+    // set username and password
+    $client->setCredentials($username, $password);
+
+    // confirmation message when connection made
+    $client->onConnect(function() use ($client) {
+        echo "Connected to the broker.\n";
+    });
+
+    // defining message callback - if ping received, publish pong
+    $client->onMessage(function($message) use ($client) {
+        echo "Received message: " . $message->payload . "\n";
+        if ($message->payload == "ping") {
+            echo "Received 'ping', sending 'pong'.\n";
+            $client->publish($message->topic, "pong");
+        }
+    });
+
+    $client->connect($host, $port, 5);
+    return $client;
+}
+
+function handleMQTT($client, $topic) {
+    $client->subscribe($topic, 0);
+
+    // wait for a message, without blocking
+    // temporarily looped for local testing
+    //while (true) {
+        $client->loop();
+        sleep(1);  // give it a second to receive the message
+    //}
+
+    // disconnect after trying to receive the message
+    $client->disconnect();
+}
+
 while(true) 
 {
     $now = time();
@@ -102,6 +140,16 @@ while(true)
     if ($trigger>0) {
         $log->info("trigger");
     }
+
+    // Fido MQTT ping test
+    // TCP Connection
+    $fido_mqtt_tcp_host = 'dashboard.energylocal.org.uk';
+    $tcpClient = createClient('fido_mqtt_tcp', $settings['mqtt']['user'], $settings['mqtt']['password'], $fido_mqtt_tcp_host, 1883);
+    handleMQTT($tcpClient, 'testing/pingtcp');
+
+    // TLS Connection
+    //$tlsClient = createClient('fido_mqtt_tls', $settings['mqtt']['user'], $settings['mqtt']['password'], $fido_mqtt_tcp_host, 8883);
+    //handleMQTT($tlsClient, 'testing/pingtls');
     
     // ---------------------------------------------------------------------
     // Control Loop
