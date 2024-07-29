@@ -10,7 +10,7 @@ function get_list_entry_energylocal()
                 "name"=>"Club",
                 "type"=>"select",
                 "options"=>array(
-                    "bethesda"=>"Bethesda",
+                    "bethesda"=>"Bethesda", // FIXME: needs to come from DB
                     "corwen"=>"Corwen",
                     "crickhowell"=>"Crickhowell",
                     "bethesda_solar"=>"Solar",
