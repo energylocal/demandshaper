@@ -72,14 +72,14 @@ $u = $user->get($session['userid'])
               <li><p>Navigate to your Tasmota device configuration in your webbrowser.</p></li>
               <li><p>Select Configuration &gt; Configure Other and set MQTT enabled. Save, and return to Configuration.</p></li>
               <li>
-                <p>Select Configure MQTT. Enter (or copy and paste) the values below before saving:</p>
+                <p>Select Configure MQTT. Enter (or copy and paste <i class="icon-share"></i>) the values below before saving:</p>
                 <ul>
-                  <li>Host: <b><?= $_SERVER['HTTP_HOST']  ?></b></li>
-                  <li>Port: <b><?= $settings['mqtt']['port'] ?></b></li>
-                  <li>User: <b><?= $u->username ?></b></li>
-                  <li>Password (API write key): <b><?= $u->apikey_write ?></b></li>
-                  <li>Topic: <b>tasmota_%06X</b></li>
-                  <li>Full topic: <b>user/<?=$u->id?>/%topic%/%prefix%</b></li>
+                  <li>Host: <b><?=$_SERVER['HTTP_HOST']?></b> <a href="#" onclick="copyToClipboard('<?=$_SERVER['HTTP_HOST']?>');return false;"><i class="icon-share"></i></a></li>
+                  <li>Port: <b><?=$settings['mqtt']['port']?></b> <a href="#" onclick="copyToClipboard('<?=$settings['mqtt']['port']?>');return false;"><i class="icon-share"></i></a></li>
+                  <li>User: <b><?=$u->username ?></b> <a href="#" onclick="copyToClipboard('<?=$u->username ?>');return false;"><i class="icon-share"></i></a></li>
+                  <li>Password (API write key): <b><?=$u->apikey_write?></b> <a href="#" onclick="copyToClipboard('<?=$u->apikey_write?>');return false;"><i class="icon-share"></i></a></li>
+                  <li>Topic: <b>tasmota_%06X</b> <a href="#" onclick="copyToClipboard('tasmota_%06X');return false;"><i class="icon-share"></i></a></li>
+                  <li>Full topic: <b>user/<?=$u->id?>/%topic%/%prefix%</b> <a href="#" onclick="copyToClipboard('<?=$u->id?>/%topic%/%prefix%');return false;"><i class="icon-share"></i></a></li>
                 </ul>
               </li>
               <li>A new Tasmota entry should appear in the devices menu shortly.</li>
@@ -145,6 +145,15 @@ $u = $user->get($session['userid'])
   </div>
 
 <script>
+
+async function copyToClipboard(copyText) {
+   // Copy the text inside the text field
+  await navigator.clipboard.writeText(copyText);
+
+  // Alert the copied text
+  alert("Copied to clipboard: " + copyText);
+}
+
 var emoncmspath = "<?php echo $emoncmspath; ?>";
 var apikeystr = "<?php echo $apikeystr; ?>";
 
