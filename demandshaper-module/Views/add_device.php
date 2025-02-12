@@ -79,7 +79,7 @@ $u = $user->get($session['userid'])
                   <li>User: <b><?=$u->username ?></b> <a href="#" onclick="copyToClipboard('<?=$u->username ?>');return false;"><i class="icon-share"></i></a></li>
                   <li>Password (API write key): <b><?=$u->apikey_write?></b> <a href="#" onclick="copyToClipboard('<?=$u->apikey_write?>');return false;"><i class="icon-share"></i></a></li>
                   <li>Topic: <b>tasmota_%06X</b> <a href="#" onclick="copyToClipboard('tasmota_%06X');return false;"><i class="icon-share"></i></a></li>
-                  <li>Full topic: <b>user/<?=$u->id?>/%topic%/%prefix%</b> <a href="#" onclick="copyToClipboard('<?=$u->id?>/%topic%/%prefix%');return false;"><i class="icon-share"></i></a></li>
+                  <li>Full topic: <b>user/<?=$u->id?>/%topic%/%prefix%</b> <a href="#" onclick="copyToClipboard('user/<?=$u->id?>/%topic%/%prefix%');return false;"><i class="icon-share"></i></a></li>
                 </ul>
               </li>
               <li>A new Tasmota entry should appear in the devices menu shortly.</li>
@@ -170,7 +170,7 @@ setInterval(detect_new_device,5000);
 function detect_new_device() {
     $.ajax({ url: emoncmspath+"demandshaper/list"+apikeystr, dataType: 'json', async: true, success: function(result) {
         console.log(result);
-        
+
         // First run devices var is false, populate with known devices
         if (devices===false) {
             devices = [];
