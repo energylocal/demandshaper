@@ -51,7 +51,7 @@ $u = $user->get($session['userid'])
 
       <div style="border-bottom:1px solid #fff">
       <div class="wizard-option-l1" name="add-device"><svg class="icon"><use xlink:href="#icon-plus"></use></svg> Add Device</div>
-      <div class="wizard-group hide" name="add-device">
+      <div class="wizard-group" name="add-device">
           <div class="wizard-option-l2" name="smartplug"><svg class="icon"><use xlink:href="#icon-smartplug"></use></svg> SonOff Smart Plug</div>
           <div class="wizard-option-l3 hide" name="smartplug">
           <p>1. Plug your smart plug into an electrical socket. The light on the plug will show green for 3 seconds followed by a short off period and then a couple of very short flashes. This indicates that the plug is working and has created a WIFI Access Point.</p>
