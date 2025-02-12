@@ -70,12 +70,13 @@ $u = $user->get($session['userid'])
             <ol>
               <li><p>Commission your device as per the <a href="https://tasmota.github.io/docs/" target="_blank">Tasmota</a> instructions.</p></li>
               <li><p>Navigate to your Tasmota device configuration in your webbrowser.</p></li>
-              <li><p>Select Configuration &gt; Configure Other and set MQTT enabled. Save, and return to Configuration.</p></li>
+              <li><p>Select Configuration &raquo; Configure Other and ensure MQTT is enabled. Save, and return to Configuration.</p></li>
               <li>
                 <p>Select Configure MQTT. Enter (or copy and paste <i class="icon-share"></i>) the values below before saving:</p>
                 <ul>
+                  <li>MQTT TLS: This should be ticked.<p>If the option is not available then upgrade Tasmota. Legacy devices can use port 1883 without encryption but this is not recommended.</p></li>
                   <li>Host: <b><?=$_SERVER['HTTP_HOST']?></b> <a href="#" onclick="copyToClipboard('<?=$_SERVER['HTTP_HOST']?>');return false;"><i class="icon-share"></i></a></li>
-                  <li>Port: <b><?=$settings['mqtt']['port']?></b> <a href="#" onclick="copyToClipboard('<?=$settings['mqtt']['port']?>');return false;"><i class="icon-share"></i></a></li>
+                  <li>Port: <b>8883</b> <a href="#" onclick="copyToClipboard('8883');return false;"><i class="icon-share"></i></a></li>
                   <li>User: <b><?=$u->username ?></b> <a href="#" onclick="copyToClipboard('<?=$u->username ?>');return false;"><i class="icon-share"></i></a></li>
                   <li>Password (API write key): <b><?=$u->apikey_write?></b> <a href="#" onclick="copyToClipboard('<?=$u->apikey_write?>');return false;"><i class="icon-share"></i></a></li>
                   <li>Topic: <b>tasmota_%06X</b> <a href="#" onclick="copyToClipboard('tasmota_%06X');return false;"><i class="icon-share"></i></a></li>
