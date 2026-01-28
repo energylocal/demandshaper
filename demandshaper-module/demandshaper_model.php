@@ -137,16 +137,20 @@ class DemandShaper
         // remove runtime settings
         $schedules_to_disk = json_decode(json_encode($schedules));
         if ($schedules_to_disk) {
-            foreach ($schedules_to_disk as $device=>$schedule) {
-                unset($schedules_to_disk->$device->runtime);
+            if (is_array($schedules_to_disk) || is_object($schedules_to_disk)) {
+                foreach ($schedules_to_disk as $device=>$schedule) {
+                    unset($schedules_to_disk->$device->runtime);
+                }
             }
         }
         
         // remove runtime settings
         $last_schedules_to_disk = $schedules_old;
         if ($last_schedules_to_disk) {
-            foreach ($last_schedules_to_disk as $device=>$schedule) {
-                unset($last_schedules_to_disk->$device->runtime);
+            if (is_array($last_schedules_to_disk) || is_object($last_schedules_to_disk)) {
+                foreach ($last_schedules_to_disk as $device=>$schedule) {
+                    unset($last_schedules_to_disk->$device->runtime);
+                }
             }
         }
                 
@@ -190,13 +194,16 @@ class DemandShaper
             $demandshaper_devices = json_decode($demandshaper_devices_json);
         } else {
             $result = $this->mysqli->query("SELECT schedules FROM demandshaper WHERE `userid`='$userid'");
-            if ($row = $result->fetch_object()) $demandshaper_devices = json_decode($row->schedules);
+            if ($row = $result->fetch_object()) {
+                $demandshaper_devices = json_decode($row->schedules);
+                $this->redis->set("demandshaper:schedules:$userid", $row->schedules);
+            }
         }
+
         if (!$demandshaper_devices || !is_object($demandshaper_devices) || $demandshaper_devices==null) $demandshaper_devices = new stdClass();
         
         // Load device list from device module
         $device_module_devices = $this->get_devices($userid);
-        
         // Copy over device schedules from demandshaper table
         foreach ($device_module_devices as $device_key=>$device) {
             if (isset($demandshaper_devices->$device_key)) {
@@ -326,8 +333,11 @@ class DemandShaper
                     }
                     
                     // Combine
-                    for ($td=0; $td<$profile_length; $td++) {
-                        $combined->profile[$td] += ($forecast->profile[$td]*$config_item->weight);
+                    if (isset($forecast->profile) && is_array($forecast->profile)) {
+                        for ($td=0; $td<$profile_length; $td++) {
+                            $value = $forecast->profile[$td] ?? 0;
+                            $combined->profile[$td] += ($value * $config_item->weight);
+                        }
                     }
                 }
             }

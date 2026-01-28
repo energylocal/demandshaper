@@ -19,6 +19,9 @@ function get_forecast_demandprofile($redis,$params)
     if ($demandshaper_devices_json = $redis->get("demandshaper:schedules:".$params->userid)) {
         $demandshaper_devices = json_decode($demandshaper_devices_json);
     }
+    if (!is_array($demandshaper_devices) && !is_object($demandshaper_devices)) {
+        return;
+    }
     
     $device_schedules = array();    
     foreach ($demandshaper_devices as $name=>$device) {
